@@ -108,3 +108,22 @@ export function useTrade(id) {
 
   return { trade, loading, error }
 }
+
+export function useEquityCurve(accountId) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!accountId) return
+    setLoading(true)
+    setError(null)
+    api
+      .get(`/accounts/${accountId}/equity-curve`)
+      .then((d) => setData(d))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [accountId])
+
+  return { data, loading, error }
+}

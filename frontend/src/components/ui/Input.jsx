@@ -7,7 +7,7 @@ export default function Input({ label, icon: Icon, type, className = '', inputCl
   const inputType = isPassword && showPassword ? 'text' : type
 
   const base =
-    'w-full rounded-[18px] border border-border bg-surface-2 py-[15px] text-[15px] text-ink outline-none transition placeholder:text-ink-3 focus:border-blue1 focus:ring-4 focus:ring-blue1/15'
+    'w-full rounded-[18px] border border-border bg-surface-2 py-[15px] text-[15px] text-ink outline-none transition placeholder:text-ink-3 focus:border-blue1 focus:ring-4 focus:ring-blue1/15 disabled:opacity-40 disabled:cursor-not-allowed'
   return (
     <div className={className}>
       {label && (

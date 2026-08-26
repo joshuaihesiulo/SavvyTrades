@@ -32,7 +32,7 @@ export default function AddTrade() {
   const { accounts, loading: accountsLoading } = useAccounts()
   const [symbol, setSymbol] = useState('')
   const [direction, setDirection] = useState('buy')
-  const [outcome, setOutcome] = useState('win')
+  const [outcome, setOutcome] = useState('open')
   const [pnl, setPnl] = useState('')
   const [reason, setReason] = useState('')
   const [notes, setNotes] = useState('')
@@ -44,25 +44,66 @@ export default function AddTrade() {
   const [screenshotErrors, setScreenshotErrors] = useState([])
 
   const activeAccountId = accountId || accounts[0]?.id || ''
+  const isClosed = outcome !== 'open'
+
+  function validatePnl(value, selectedOutcome) {
+    const num = parseFloat(value)
+    if (isNaN(num) || value === '') return ''
+    if (selectedOutcome === 'win' && num <= 0) return 'Winning trades must have a positive P/L'
+    if (selectedOutcome === 'loss' && num >= 0) return 'Losing trades must have a negative P/L'
+    if (selectedOutcome === 'be' && num !== 0) return 'Break-even trades must have P/L of $0'
+    return ''
+  }
+
+  function handleOutcomeChange(newOutcome) {
+    setOutcome(newOutcome)
+    if (newOutcome === 'open') {
+      setPnl('')
+    } else if (newOutcome === 'be') {
+      setPnl('0')
+    } else {
+      setPnl('')
+    }
+  }
+
+  function handlePnlChange(e) {
+    const val = e.target.value
+    if (val === '' || val === '-' || val === '.' || val === '-.') {
+      setPnl(val)
+      return
+    }
+    const num = parseFloat(val)
+    if (!isNaN(num)) {
+      setPnl(val)
+    }
+  }
 
   async function handleSubmit() {
     if (!symbol.trim() || !activeAccountId) {
       setError('Please fill in symbol and select an account')
       return
     }
+    if (isClosed) {
+      const pnlError = validatePnl(pnl || '0', outcome)
+      if (pnlError) {
+        setError(pnlError)
+        return
+      }
+    }
     setError('')
     setSubmitting(true)
     try {
-      const outcomeMap = { win: 'WIN', loss: 'LOSS', be: 'BREAK_EVEN' }
+      const outcomeMap = { win: 'WIN', loss: 'LOSS', be: 'BREAK_EVEN', open: 'OPEN' }
       const tradeData = {
         tradingAccountId: activeAccountId,
         symbol: symbol.trim().toUpperCase(),
         direction: direction.toUpperCase(),
-        outcome: outcomeMap[outcome] || 'WIN',
-        pnl: pnl ? parseFloat(pnl) : 0,
+        outcome: outcomeMap[outcome] || 'OPEN',
+        pnl: isClosed ? (pnl ? parseFloat(pnl) : 0) : 0,
         confluence: reason || undefined,
         notes: notes || undefined,
         openedAt: new Date().toISOString(),
+        closedAt: isClosed ? new Date().toISOString() : null,
       }
       const result = await api.post('/trades', tradeData)
 
@@ -198,22 +239,41 @@ export default function AddTrade() {
           <GlassCard className="animate-fade-up mt-4 p-[18px]" style={{ animationDelay: '0.09s' }}>
             <span className="mb-2 block text-xs font-semibold tracking-wide text-ink-2">Outcome</span>
             <div className="mt-2 grid grid-cols-2 gap-2.5">
-              <OptionChip selected={outcome === 'win'} onClick={() => setOutcome('win')}>
+              <OptionChip selected={outcome === 'win'} onClick={() => handleOutcomeChange('win')}>
                 Win
               </OptionChip>
-              <OptionChip selected={outcome === 'loss'} onClick={() => setOutcome('loss')}>
+              <OptionChip selected={outcome === 'loss'} onClick={() => handleOutcomeChange('loss')}>
                 Loss
+              </OptionChip>
+              <OptionChip selected={outcome === 'be'} onClick={() => handleOutcomeChange('be')}>
+                Break-even
+              </OptionChip>
+              <OptionChip selected={outcome === 'open'} onClick={() => handleOutcomeChange('open')}>
+                Open
               </OptionChip>
             </div>
             <div className="mt-4">
               <Input
                 label="Profit / Loss ($)"
-                placeholder="842.50"
+                placeholder={outcome === 'open' ? 'Disabled for open trades' : outcome === 'be' ? '0' : outcome === 'win' ? '842.50' : '-842.50'}
                 type="number"
                 step="0.01"
                 value={pnl}
-                onChange={(e) => setPnl(e.target.value)}
+                onChange={handlePnlChange}
+                disabled={outcome === 'open'}
               />
+              {outcome === 'win' && pnl && parseFloat(pnl) <= 0 && (
+                <p className="mt-1.5 text-[12px] text-rose">Must be positive for a winning trade</p>
+              )}
+              {outcome === 'loss' && pnl && parseFloat(pnl) >= 0 && (
+                <p className="mt-1.5 text-[12px] text-rose">Must be negative for a losing trade</p>
+              )}
+              {outcome === 'be' && pnl && parseFloat(pnl) !== 0 && (
+                <p className="mt-1.5 text-[12px] text-rose">Must be $0 for break-even</p>
+              )}
+              {outcome === 'open' && (
+                <p className="mt-1.5 text-[12px] text-ink-3">P/L is set when the trade is closed</p>
+              )}
             </div>
           </GlassCard>
 

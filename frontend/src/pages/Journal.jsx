@@ -6,8 +6,15 @@ import { IconPlus, IconSearch, IconFilter } from '../components/Icons'
 import TradeCard from '../components/ui/TradeCard'
 import EmptyState from '../components/ui/EmptyState'
 
+const TABS = [
+  { key: 'all', label: 'All' },
+  { key: 'open', label: 'Open' },
+  { key: 'closed', label: 'Closed' },
+]
+
 export default function Journal() {
   const [query, setQuery] = useState('')
+  const [tab, setTab] = useState('all')
   const { accounts, loading: accountsLoading } = useAccounts()
   const { trades, loading } = useTrades(accounts[0]?.id)
 
@@ -20,11 +27,18 @@ export default function Journal() {
     outcome: normalizeOutcome(t.outcome),
     pl: t.pnl,
     reason: t.confluence,
+    status: normalizeOutcome(t.outcome) === 'open' ? 'open' : 'closed',
   }))
 
-  const filtered = displayTrades.filter((t) =>
-    t.symbol.toLowerCase().includes(query.trim().toLowerCase()),
-  )
+  const filtered = displayTrades.filter((t) => {
+    const matchesQuery = t.symbol.toLowerCase().includes(query.trim().toLowerCase())
+    if (tab === 'all') return matchesQuery
+    if (tab === 'open') return matchesQuery && t.status === 'open'
+    return matchesQuery && t.status === 'closed'
+  })
+
+  const openCount = displayTrades.filter((t) => t.status === 'open').length
+  const closedCount = displayTrades.filter((t) => t.status === 'closed').length
 
   return (
     <div>
@@ -72,6 +86,33 @@ export default function Journal() {
             </button>
           </div>
 
+          <div className="animate-fade-up mt-4 flex gap-2" style={{ animationDelay: '0.06s' }}>
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={`relative rounded-full px-4 py-2 text-[13px] font-semibold transition ${
+                  tab === t.key
+                    ? 'bg-gradient-to-br from-blue1 to-blue2 text-[#0b0d13]'
+                    : 'bg-surface-2 text-ink-2'
+                }`}
+              >
+                {t.label}
+                {t.key === 'open' && openCount > 0 && (
+                  <span className="ml-1.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-mint/20 px-1 text-[10px] font-bold text-mint">
+                    {openCount}
+                  </span>
+                )}
+                {t.key === 'closed' && closedCount > 0 && (
+                  <span className="ml-1.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-blue1/20 px-1 text-[10px] font-bold text-blue1">
+                    {closedCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
           <div className="mt-5 flex flex-col gap-2.5">
             {loading ? (
               <div className="flex justify-center py-12">
@@ -84,7 +125,13 @@ export default function Journal() {
                 ))}
                 {filtered.length === 0 && !loading && (
                   <div className="animate-fade-up rounded-3xl border border-border bg-gradient-to-b from-white/[0.07] to-white/[0.045] p-8 text-center text-sm text-ink-3">
-                    {query ? `No trades match "${query}".` : 'No trades yet. Add your first trade!'}
+                    {query
+                      ? `No trades match "${query}".`
+                      : tab === 'open'
+                        ? 'No open trades. All your trades are closed!'
+                        : tab === 'closed'
+                          ? 'No closed trades yet. Close some trades to see them here.'
+                          : 'No trades yet. Add your first trade!'}
                   </div>
                 )}
               </>

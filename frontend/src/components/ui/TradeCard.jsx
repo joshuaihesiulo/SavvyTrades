@@ -4,8 +4,10 @@ import Pill from './Pill'
 import { fmtPL } from '../../utils'
 
 export default function TradeCard({ trade, delay = 0 }) {
-  const plClass =
-    trade.outcome === 'win'
+  const isOpen = trade.outcome === 'open' || trade.status === 'open'
+  const plClass = isOpen
+    ? 'text-ink-3'
+    : trade.outcome === 'win'
       ? 'text-mint'
       : trade.outcome === 'loss'
         ? 'text-rose'
@@ -22,18 +24,25 @@ export default function TradeCard({ trade, delay = 0 }) {
             {trade.badge}
           </div>
           <div>
-            <div className="text-[14.5px] font-bold">{trade.symbol}</div>
+            <div className="flex items-center gap-2">
+              <span className="text-[14.5px] font-bold">{trade.symbol}</span>
+              {isOpen && (
+                <span className="inline-flex h-[18px] items-center rounded-full bg-amber/15 px-2 text-[10px] font-bold text-amber">
+                  OPEN
+                </span>
+              )}
+            </div>
             <div className="mt-[3px] text-[11.5px] text-ink-3">
               {trade.date} · {trade.time}
             </div>
           </div>
         </div>
         <div className="text-right">
-          <Pill variant={trade.direction === 'buy' ? 'mint' : 'rose'}>
-            {trade.direction === 'buy' ? '▲ Buy' : '▼ Sell'}
+          <Pill variant={isOpen ? 'neutral' : trade.direction === 'buy' ? 'mint' : 'rose'}>
+            {isOpen ? '● Open' : trade.direction === 'buy' ? '▲ Buy' : '▼ Sell'}
           </Pill>
           <div className={`mt-2 text-[15px] font-bold tabular-nums ${plClass}`}>
-            {fmtPL(trade.pl)}
+            {isOpen ? '—' : fmtPL(trade.pl)}
           </div>
         </div>
       </GlassCard>

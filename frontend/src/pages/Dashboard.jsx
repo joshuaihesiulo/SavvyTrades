@@ -1,13 +1,73 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useAccounts, useAccountStats } from '../hooks/useData'
+import { useAccounts, useAccountStats, useEquityCurve } from '../hooks/useData'
 import { fmtPL } from '../utils'
 import AtmCard from '../components/ui/AtmCard'
 import GlassCard from '../components/ui/GlassCard'
 import StatCard from '../components/ui/StatCard'
 import AccountsWallet from '../components/ui/AccountsWallet'
 import { IconChevronDown } from '../components/Icons'
+
+function EquityChart({ points }) {
+  if (!points || points.length < 2) {
+    return (
+      <svg width="90" height="34" viewBox="0 0 90 34" fill="none" aria-hidden>
+        <defs>
+          <linearGradient id="pl-grad" x1="0" y1="0" x2="90" y2="0">
+            <stop stopColor="#3fd9ac" />
+            <stop offset="1" stopColor="#7c93ff" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M0 28 L12 24 L24 26 L36 16 L48 19 L60 8 L72 12 L90 2"
+          stroke="url(#pl-grad)"
+          strokeWidth="2.4"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    )
+  }
+
+  const balances = points.map((p) => p.balance)
+  const min = Math.min(...balances)
+  const max = Math.max(...balances)
+  const range = max - min || 1
+  const width = 90
+  const height = 34
+  const padding = 2
+
+  const pathData = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * (width - padding * 2) + padding
+      const y = height - padding - ((p.balance - min) / range) * (height - padding * 2)
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`
+    })
+    .join(' ')
+
+  const isPositive = (points[points.length - 1].balance - points[0].balance) >= 0
+
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} fill="none" aria-hidden>
+      <defs>
+        <linearGradient id="pl-grad" x1="0" y1="0" x2={width} y2="0">
+          <stop stopColor={isPositive ? '#3fd9ac' : '#f2778c'} />
+          <stop offset="1" stopColor="#7c93ff" />
+        </linearGradient>
+      </defs>
+      <path
+        d={pathData}
+        stroke="url(#pl-grad)"
+        strokeWidth="2.4"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -19,6 +79,7 @@ export default function Dashboard() {
 
   const resolvedId = activeId || accounts[0]?.id
   const { stats, loading: statsLoading } = useAccountStats(resolvedId)
+  const { data: equityData } = useEquityCurve(resolvedId)
   const active = accounts.find((a) => a.id === resolvedId)
 
   const openWallet = () => setWalletOpen(true)
@@ -143,22 +204,7 @@ export default function Dashboard() {
                   {statsLoading ? '—' : fmtPL(stats?.totalPnL ?? 0)}
                 </div>
               </div>
-              <svg width="90" height="34" viewBox="0 0 90 34" fill="none" aria-hidden>
-                <defs>
-                  <linearGradient id="pl-grad" x1="0" y1="0" x2="90" y2="0">
-                    <stop stopColor="#3fd9ac" />
-                    <stop offset="1" stopColor="#7c93ff" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0 28 L12 24 L24 26 L36 16 L48 19 L60 8 L72 12 L90 2"
-                  stroke="url(#pl-grad)"
-                  strokeWidth="2.4"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <EquityChart points={equityData?.points || []} />
             </GlassCard>
             <StatCard
               className="animate-fade-up"

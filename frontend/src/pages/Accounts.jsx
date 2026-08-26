@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { IconPlus } from '../components/Icons'
 import Button from '../components/ui/Button'
 import StackedAtmCard from '../components/ui/StackedAtmCard'
@@ -18,6 +18,7 @@ const shadows = [
 ]
 
 export default function Accounts() {
+  const navigate = useNavigate()
   const { accounts, loading } = useAccounts()
   const [activeId, setActiveId] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
@@ -75,6 +76,7 @@ export default function Accounts() {
             key={acc.id}
             type="button"
             onClick={() => setSelectedId(acc.id)}
+            onDoubleClick={() => navigate(`/edit-account/${acc.id}`)}
             className={`absolute left-1/2 w-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${stackPos[pos(i)]}`}
           >
             <StackedAtmCard
@@ -87,13 +89,21 @@ export default function Accounts() {
       </div>
 
       <div className="animate-fade-up fixed inset-x-0 bottom-6 z-10 px-5 lg:left-auto lg:right-0 lg:w-[28rem]">
-        <Button
-          variant="ghost"
-          className="mx-auto w-[305px] max-w-full"
-          onClick={() => setActiveId(resolvedSelected)}
-        >
-          Set as Active Account
-        </Button>
+        <div className="mx-auto flex w-[305px] max-w-full flex-col gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => setActiveId(resolvedSelected)}
+          >
+            Set as Active Account
+          </Button>
+          <button
+            type="button"
+            onClick={() => navigate(`/edit-account/${resolvedSelected}`)}
+            className="rounded-2xl border border-border bg-surface-2 px-4 py-3 text-[13px] font-semibold text-ink-2 transition hover:border-border-strong"
+          >
+            Edit Account
+          </button>
+        </div>
       </div>
     </div>
   )

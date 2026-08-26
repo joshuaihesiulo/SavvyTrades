@@ -8,6 +8,7 @@ import VerifyEmail from './pages/VerifyEmail'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import NewAccount from './pages/NewAccount'
+import EditAccount from './pages/EditAccount'
 import Dashboard from './pages/Dashboard'
 import Accounts from './pages/Accounts'
 import AddTrade from './pages/AddTrade'
@@ -36,6 +37,7 @@ export default function App() {
         </Route>
         <Route element={<AppShell />}>
           <Route path="/new-account" element={<NewAccount />} />
+          <Route path="/edit-account/:id" element={<EditAccount />} />
           <Route path="/accounts" element={<Accounts />} />
           <Route path="/trade/:id" element={<TradeDetail />} />
         </Route>

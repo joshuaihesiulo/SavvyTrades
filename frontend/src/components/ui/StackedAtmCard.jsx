@@ -23,8 +23,8 @@ export default function StackedAtmCard({
       <AtmCard
         size="sm"
         name={account.name}
-        balance={account.balance}
-        pl={account.pl}
+        balance={account.currentBalance ?? account.balance}
+        pl={account.percentChange ?? account.pl}
         shadowClass={shadowClass}
         className="w-full"
       />
