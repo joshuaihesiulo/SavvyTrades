@@ -4,7 +4,7 @@ import  TradingAccount  from '../models/TradingAccount.js';
 
 export const createTrade = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const {
       tradingAccountId,
       symbol,
@@ -53,7 +53,7 @@ export const createTrade = async (req: Request, res: Response, next: NextFunctio
 
 export const getTrades = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { tradingAccountId, page = 1, limit = 10, symbol, direction, outcome } = req.query;
 
     // 1. Verify the requested trading account exists AND belongs to the authenticated user
@@ -101,7 +101,7 @@ export const getTrades = async (req: Request, res: Response, next: NextFunction)
 // Get Single Trade by ID (Ensuring Ownership)
 export const getTradeById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { id } = req.params;
 
     const trade = await Trade.findOne({
@@ -129,7 +129,7 @@ export const getTradeById = async (req: Request, res: Response, next: NextFuncti
 // Update & Close Trade
 export const updateTrade = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { id } = req.params;
     const updates = req.body;
 
@@ -176,7 +176,7 @@ export const updateTrade = async (req: Request, res: Response, next: NextFunctio
 // Delete Trade
 export const deleteTrade = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { id } = req.params;
 
     const trade = await Trade.findOne({

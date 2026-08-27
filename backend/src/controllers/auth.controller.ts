@@ -161,7 +161,7 @@ const resetPassword = async (req: Request, res: Response, next: NextFunction) =>
 
 const getMe = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId
+    const userId = (req as { auth?: { userId: string } }).auth?.userId
     const user = await User.findByPk(userId, {
       attributes: { exclude: ['password']}
     });
@@ -179,7 +179,7 @@ const getMe = async (req: Request, res: Response, next: NextFunction) => {
 const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
   try{
     const { name, email } = req.body
-    const userId = req.auth?.userId
+    const userId = (req as { auth?: { userId: string } }).auth?.userId
     const user = await User.findByPk(userId);
 
     if (!user) {
@@ -219,7 +219,7 @@ const updateProfile = async (req: Request, res: Response, next: NextFunction) =>
 
 const changePassword = async (req: Request, res: Response, next: NextFunction) => {
   try{
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { currentPassword, newPassword } = req.body;
 
     const user = await User.findByPk(userId);

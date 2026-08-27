@@ -1,6 +1,4 @@
-// In dev, leave VITE_API_URL unset so requests go through the Vite proxy.
-// In prod builds (.env.production), it points at the deployed backend.
-const BASE_URL = `${import.meta.env.VITE_API_URL || ''}/api/v1`
+const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 function getToken() {
   return localStorage.getItem('token')

@@ -7,7 +7,7 @@ import { Op } from 'sequelize';
 // Composed Full Dashboard Endpoint
 export const getDashboard = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId!;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId!;
     const { accountId } = req.params;
 
     const data = await calculateDashboardData((accountId as string), userId);
@@ -23,7 +23,7 @@ export const getDashboard = async (req: Request, res: Response, next: NextFuncti
 // Standalone Performance Stats
 export const getAccountStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId!;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId!;
     const { accountId } = req.params;
 
     const data = await calculateDashboardData(accountId as string, userId);
@@ -39,7 +39,7 @@ export const getAccountStats = async (req: Request, res: Response, next: NextFun
 // Standalone Equity Curve Sparkline
 export const getEquityCurve = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId!;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId!;
     const { accountId } = req.params;
     const range = (req.query.range as string) || 'all';
 
@@ -59,7 +59,7 @@ export const getEquityCurve = async (req: Request, res: Response, next: NextFunc
 // List all user accounts (For Account Switcher)
 export const getUserAccounts = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId!;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId!;
     const accounts = await TradingAccount.findAll({ where: { userId } });
 
     const accountIds = accounts.map((acc) => acc.id);

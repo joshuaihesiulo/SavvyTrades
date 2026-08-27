@@ -4,7 +4,7 @@ import { Op } from 'sequelize';
 
 export const createTradingAccount = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { accountName, market, accountType, startingBalance, currency } = req.body;
 
     // Optional: Check for duplicate account names per user
@@ -37,7 +37,7 @@ export const createTradingAccount = async (req: Request, res: Response, next: Ne
 // Fetch All Trading Accounts Belonging to Authenticated User
 export const getAllTradingAccounts = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
 
     const accounts = await TradingAccount.findAll({
       where: { userId },
@@ -56,7 +56,7 @@ export const getAllTradingAccounts = async (req: Request, res: Response, next: N
 // Fetch Single Trading Account by ID (Ensuring Ownership)
 export const getTradingAccountById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { id } = req.params;
 
     const account = await TradingAccount.findOne({
@@ -75,7 +75,7 @@ export const getTradingAccountById = async (req: Request, res: Response, next: N
 
 export const updateTradingAccount = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { id } = req.params;
     const { accountName, market, accountType, startingBalance, currency } = req.body;
 
@@ -123,7 +123,7 @@ export const updateTradingAccount = async (req: Request, res: Response, next: Ne
 // Delete Trading Account
 export const deleteTradingAccount = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { id } = req.params;
 
     const account = await TradingAccount.findOne({

@@ -1,0 +1,3 @@
+{
+  "buildCommand": "echo \"Vercel bundles TypeScript for the Express function; skipping local tsc build.\""
+}

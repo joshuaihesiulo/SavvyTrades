@@ -1,27 +1,25 @@
 import 'dotenv/config';
+import './types/express.js';
 import app from "./app.js"
 import  sequelize  from "./database/connection.js";
 
 const PORT = process.env.PORT || 5000;
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-    console.error('❌ JWT_SECRET is not set in environment variables');
-    process.exit(1);
+if (!process.env.JWT_SECRET) {
+    console.warn('⚠️  JWT_SECRET is not set in environment variables. Auth endpoints will fail.');
 }
 
 async function startServer() {
     try {
         await sequelize.authenticate();
         console.log('✅ Database connection established successfully.');
-
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running on http://localhost:${PORT}/api/v1/health`);
-        });
     } catch (error) {
         console.error('❌ Unable to connect to the database:', error);
-        process.exit(1);
     }
+
+    app.listen(PORT, () => {
+        console.log(`🚀 Day 1 Server running on http://localhost:${PORT}/api/v1/health`);
+    });
 }
 
 startServer();

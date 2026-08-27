@@ -6,7 +6,7 @@ import cloudinary from '../config/cloudinary.config.js';
 
 export const uploadScreenshot = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { tradeId } = req.params;
     const { caption, screenshotType } = req.body;
 
@@ -65,7 +65,7 @@ export const uploadScreenshot = async (req: Request, res: Response, next: NextFu
 
 export const deleteScreenshot = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { tradeId, id } = req.params;
 
     // Verify ownership through Trade -> TradingAccount chain
@@ -105,7 +105,7 @@ export const deleteScreenshot = async (req: Request, res: Response, next: NextFu
 
 export const getTradeScreenshots = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.auth?.userId;
+    const userId = (req as { auth?: { userId: string } }).auth?.userId;
     const { tradeId } = req.params;
 
     // 1. Verify Trade existence and User Ownership
