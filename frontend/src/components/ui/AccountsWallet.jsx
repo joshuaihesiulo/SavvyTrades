@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { IconPlus, IconX } from '../Icons'
 import Button from './Button'
 import StackedAtmCard from './StackedAtmCard'
@@ -27,9 +27,10 @@ const shadows = [
 
 const dropDelays = ['0s', '0.08s', '0.16s']
 
-export default function AccountsWallet({ open, onClose, activeId, onSetActive, accounts = [] }) {
+export default function AccountsWallet({ open, onClose, activeId, accounts = [] }) {
   const [selectedId, setSelectedId] = useState(activeId)
   const [dropped, setDropped] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!open) {
@@ -131,10 +132,7 @@ export default function AccountsWallet({ open, onClose, activeId, onSetActive, a
           <Button
             variant="ghost"
             className="mx-auto w-[305px] max-w-full"
-            onClick={() => {
-              onSetActive(selectedId)
-              onClose()
-            }}
+            onClick={() => navigate('/accounts')}
           >
             Set as Active Account
           </Button>

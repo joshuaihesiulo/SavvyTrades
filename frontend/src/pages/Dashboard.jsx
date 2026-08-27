@@ -1,13 +1,13 @@
-import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useRef, useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useAccounts, useAccountStats, useEquityCurve } from '../hooks/useData'
+import { api } from '../lib/api'
 import { fmtPL } from '../utils'
 import AtmCard from '../components/ui/AtmCard'
 import GlassCard from '../components/ui/GlassCard'
 import StatCard from '../components/ui/StatCard'
-import AccountsWallet from '../components/ui/AccountsWallet'
-import { IconChevronDown } from '../components/Icons'
+import { IconChevronDown, IconGear } from '../components/Icons'
 
 function EquityChart({ points }) {
   if (!points || points.length < 2) {
@@ -70,19 +70,57 @@ function EquityChart({ points }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const { user } = useAuth()
-  const { accounts, loading: accountsLoading } = useAccounts()
-  const [walletOpen, setWalletOpen] = useState(false)
-  const [activeId, setActiveId] = useState(null)
-  const [dragging, setDragging] = useState(false)
-  const dragStart = useRef(0)
+  const { accounts, loading: accountsLoading, refetch: refetchAccounts } = useAccounts()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [activeId, setActiveId] = useState(() => searchParams.get('account') || null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const menuRef = useRef(null)
 
   const resolvedId = activeId || accounts[0]?.id
   const { stats, loading: statsLoading } = useAccountStats(resolvedId)
   const { data: equityData } = useEquityCurve(resolvedId)
   const active = accounts.find((a) => a.id === resolvedId)
 
-  const openWallet = () => setWalletOpen(true)
+  useEffect(() => {
+    if (searchParams.has('account')) {
+      setSearchParams({}, { replace: true })
+    }
+  }, [])
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false)
+      }
+    }
+    if (menuOpen) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
+
+  async function handleDeleteAccount() {
+    if (!resolvedId) return
+    setDeleting(true)
+    try {
+      await api.delete(`/trading-accounts/${resolvedId}`)
+      setMenuOpen(false)
+      setShowDeleteConfirm(false)
+      await refetchAccounts()
+      const remaining = accounts.filter((a) => a.id !== resolvedId)
+      if (remaining.length > 0) {
+        setActiveId(remaining[0].id)
+      } else {
+        navigate('/accounts')
+      }
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const firstName = user?.name?.split(' ')[0] || 'Trader'
   const initials = user?.name
@@ -127,24 +165,11 @@ export default function Dashboard() {
           <div
             role="button"
             tabIndex={0}
-            onClick={openWallet}
+            onClick={() => navigate('/accounts')}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') openWallet()
+              if (e.key === 'Enter' || e.key === ' ') navigate('/accounts')
             }}
-            onPointerDown={(e) => {
-              dragStart.current = e.clientY
-              setDragging(true)
-            }}
-            onPointerUp={(e) => {
-              const dy = e.clientY - dragStart.current
-              setDragging(false)
-              if (dy > 50 || Math.abs(dy) < 12) openWallet()
-            }}
-            onPointerCancel={() => setDragging(false)}
-            onPointerLeave={() => setDragging(false)}
-            className={`animate-fade-up relative mt-5 cursor-pointer touch-pan-x select-none transition-transform duration-200 ${
-              dragging ? 'scale-[0.985]' : ''
-            }`}
+            className="animate-fade-up relative mt-5 cursor-pointer touch-pan-x select-none transition-transform duration-200"
             style={{ animationDelay: '0.04s' }}
           >
             <div
@@ -162,13 +187,82 @@ export default function Dashboard() {
                 pl={active?.percentChange ?? 0}
               />
             </div>
+
+            <div
+              ref={menuRef}
+              className="absolute right-5 top-5 z-[2]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setMenuOpen((o) => !o)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-ink-2 backdrop-blur-md transition hover:bg-black/60 hover:text-ink"
+                aria-label="Account settings"
+              >
+                <IconGear width={16} height={16} />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-10 w-48 overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      navigate(`/edit-account/${resolvedId}`)
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-[13.5px] font-semibold text-ink transition hover:bg-white/[0.04]"
+                  >
+                    <IconGear width={15} height={15} className="text-ink-2" />
+                    Edit Account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      setShowDeleteConfirm(true)
+                    }}
+                    className="flex w-full items-center gap-2.5 border-t border-border px-4 py-3 text-[13.5px] font-semibold text-rose transition hover:bg-white/[0.04]"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    Delete Account
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+
+          {showDeleteConfirm && (
+            <div className="animate-fade-up mt-3 rounded-2xl border border-rose/30 bg-rose/10 p-4">
+              <p className="text-[13px] text-rose">
+                Delete <strong>{active?.name}</strong>? All trades will be permanently removed.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="flex-1 rounded-xl bg-rose px-4 py-2 text-[13px] font-bold text-white transition hover:brightness-110 disabled:opacity-50"
+                >
+                  {deleting ? 'Deleting…' : 'Yes, Delete'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 rounded-xl border border-border bg-surface-2 px-4 py-2 text-[13px] font-semibold text-ink-2"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           <div
             className="animate-fade-up mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-ink-3"
             style={{ animationDelay: '0.06s' }}
           >
-            Pull down or tap the card to open your wallet
+            Tap the card to view accounts
             <IconChevronDown className="text-ink-2" />
           </div>
 
@@ -247,14 +341,6 @@ export default function Dashboard() {
               valueClass={(stats?.avgPnL ?? 0) >= 0 ? 'text-mint' : 'text-rose'}
             />
           </div>
-
-          <AccountsWallet
-            open={walletOpen}
-            onClose={() => setWalletOpen(false)}
-            activeId={resolvedId}
-            onSetActive={setActiveId}
-            accounts={accounts}
-          />
         </>
       )}
     </div>
